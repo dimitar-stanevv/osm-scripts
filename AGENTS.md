@@ -61,6 +61,7 @@ When adding a new script, load this config instead of hardcoding URLs or tokens.
 - **Data directory**: generated data files go in `data/` (git-ignored).
 - **Coordinates**: GeoJSON order — `[longitude, latitude]`.
 - **Geometry joining**: when building geometries from multiple OSM ways, attempt end-to-end joining; fall back to MultiLineString if segments are disjoint.
+- **Script Visuals**: when writing scripts, make sure the output is well structured, readable, with colors where it matters and emojis
 
 ## Existing scripts
 

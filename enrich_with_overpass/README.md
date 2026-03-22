@@ -16,7 +16,7 @@ Both `input_file` and `output_file` are required positional arguments.
 |------|---------|-------------|
 | `--batch-size` | 100 | Features per batch |
 | `--max-workers` | 10 | Concurrent request threads |
-| `--requests-per-second` | 9 | Max Overpass requests per second (540/min) |
+| `--requests-per-second` | 20 | Max Overpass requests per second (1200/min) |
 
 ### Example
 

@@ -5,7 +5,8 @@ import json
 import sys
 from pathlib import Path
 
-INCLUDED_COUNTRIES = ["BG"]
+# Currently set to European countries
+INCLUDED_COUNTRIES = ["AL","AD","AT","BY","BE","BA","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IS","IE","IT","LV","LI","LT","LU","MT","MD","MC","ME","NL","MK","NO","PL","PT","RO","SM","RS","SK","SI","ES","SE","CH","UA","GB","VA","XK"]
 KNOWN_TYPES = ("redlight_cam", "speed_cam", "combined_cam", "tunnel_cam")
 
 RESET = "\033[0m"

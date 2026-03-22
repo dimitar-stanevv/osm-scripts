@@ -14,6 +14,7 @@ import sys
 import time
 import threading
 from pathlib import Path
+from typing import Optional
 
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -41,7 +42,7 @@ OVERPASS_URL = _CONFIG["overpass_url"]
 # ---------------------------------------------------------------------------
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_MAX_WORKERS = 10
-DEFAULT_REQUESTS_PER_SECOND = 9  # 540 req/min
+DEFAULT_REQUESTS_PER_SECOND = 20  # 1200 req/min
 HIGHWAY_CLASSES = (
     "motorway|motorway_link|trunk|trunk_link|primary|primary_link|"
     "secondary|secondary_link|tertiary|tertiary_link|"
@@ -176,7 +177,7 @@ def query_overpass(session: requests.Session, lat: float, lng: float,
         return None
 
 
-def extract_closest_road(overpass_response, lat: float, lng: float) -> dict | None:
+def extract_closest_road(overpass_response, lat: float, lng: float) -> Optional[dict]:
     """Parse Overpass response and return the single closest road, or None.
 
     When a road is found, every property key is always present — missing OSM
