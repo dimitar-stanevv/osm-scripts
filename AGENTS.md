@@ -21,6 +21,9 @@ osm-scripts/
 ├── enrich_with_overpass/
 │   ├── enrich_with_overpass.py           # Script: enrich points with nearest road data
 │   └── README.md
+├── count_features/
+│   ├── count_features.py                # Script: count features in GeoJSON / CSV files
+│   └── README.md
 └── fetch_section_control/
     ├── fetch_section_control.py          # Script: section control / average-speed enforcement
     └── README.md                         # Per-script documentation
@@ -90,6 +93,16 @@ python enrich_with_overpass/enrich_with_overpass.py data/speed_cams.geojson data
 ```
 
 Both positional arguments (`input_file` and `output_file`) are required. Optional flags: `--batch-size`, `--max-workers`, `--requests-per-second`.
+
+### count_features
+
+Counts features in GeoJSON and CSV files within a given folder. For GeoJSON files, counts the number of features in the FeatureCollection. For CSV files, counts the number of data rows (excluding the header). Prints a summary table with per-file counts and a total.
+
+```bash
+python count_features/count_features.py --input data/
+```
+
+`--input` is required.
 
 ## Adding a new script
 
