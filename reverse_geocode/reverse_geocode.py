@@ -15,6 +15,7 @@ import shutil
 import sys
 import time
 from pathlib import Path
+from typing import Optional, Tuple, List
 
 import requests
 
@@ -70,7 +71,7 @@ class RateLimiter:
 # ---------------------------------------------------------------------------
 # Mapbox batch reverse-geocode helpers
 # ---------------------------------------------------------------------------
-def _build_batch_body(features: list[dict]) -> list[dict]:
+def _build_batch_body(features: List[dict]) -> List[dict]:
     """Build the JSON body for a Mapbox batch reverse-geocode request."""
     body = []
     for feat in features:
@@ -82,8 +83,8 @@ def _build_batch_body(features: list[dict]) -> list[dict]:
     return body
 
 
-def _send_batch(session: requests.Session, body: list[dict],
-                rate_limiter: RateLimiter) -> dict | None:
+def _send_batch(session: requests.Session, body: List[dict],
+                rate_limiter: RateLimiter) -> Optional[dict]:
     """POST a batch request with retries for 429 (rate-limit) responses."""
     for attempt in range(1, MAX_RETRIES + 1):
         rate_limiter.acquire()
@@ -116,7 +117,7 @@ def _send_batch(session: requests.Session, body: list[dict],
     return None
 
 
-def _extract_rev_geocode(feature_collection: dict) -> tuple[dict | None, str | None]:
+def _extract_rev_geocode(feature_collection: dict) -> Tuple[Optional[dict], Optional[str]]:
     """Extract rev_geocode and country from a single reverse-geocode result."""
     feats = feature_collection.get("features", [])
     if not feats:
@@ -142,8 +143,8 @@ def _extract_rev_geocode(feature_collection: dict) -> tuple[dict | None, str | N
 # ---------------------------------------------------------------------------
 # Batch processing
 # ---------------------------------------------------------------------------
-def process_batch(session: requests.Session, features: list[dict],
-                  rate_limiter: RateLimiter) -> list[dict]:
+def process_batch(session: requests.Session, features: List[dict],
+                  rate_limiter: RateLimiter) -> List[dict]:
     """Reverse-geocode a batch of features and attach results."""
     body = _build_batch_body(features)
     response = _send_batch(session, body, rate_limiter)

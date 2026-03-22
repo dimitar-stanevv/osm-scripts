@@ -18,11 +18,17 @@ osm-scripts/
 ├── combine_dataset/
 │   ├── combine_dataset.py               # Script: merge per-speed-limit GeoJSON files
 │   └── README.md
+├── combine_scdb_dataset_single/
+│   ├── combine_scdb_dataset_single.py   # Script: merge 4 cam-type files into one GeoJSON
+│   └── README.md
 ├── enrich_with_overpass/
 │   ├── enrich_with_overpass.py           # Script: enrich points with nearest road data
 │   └── README.md
 ├── count_features/
 │   ├── count_features.py                # Script: count features in GeoJSON / CSV files
+│   └── README.md
+├── country_stats/
+│   ├── country_stats.py                 # Script: per-country feature breakdown
 │   └── README.md
 ├── fetch_section_control/
 │   ├── fetch_section_control.py          # Script: section control / average-speed enforcement
@@ -91,6 +97,16 @@ python combine_dataset/combine_dataset.py --input data/SCDB_geojson_21_mar_2026 
 
 Both `--input` and `--output` are required.
 
+### combine_scdb_dataset_single
+
+Combines the four camera-type GeoJSON files produced by `combine_dataset` (`combined_cams.geojson`, `speed_cams.geojson`, `redlight_cams.geojson`, `tunnel_cams.geojson`) into a single GeoJSON FeatureCollection. Adds a `type` property to every feature and a `speed_limit` property to speed-cam and combined-cam features. Streams output to handle large (50–100 MB) input files.
+
+```bash
+python combine_scdb_dataset_single/combine_scdb_dataset_single.py --input data/combined --output data/all_cams.geojson
+```
+
+Both `--input` and `--output` are required.
+
 ### enrich_with_overpass
 
 Enriches a GeoJSON point file by querying the Overpass API for the nearest road to each point. Adds an `osm_road` object to each feature's properties containing the closest road's OSM way ID, road class, ref, names, maxspeed, heading, and distance. Processes in resumable batches with concurrent requests and rate limiting.
@@ -110,6 +126,16 @@ python count_features/count_features.py --input data/
 ```
 
 `--input` is required.
+
+### country_stats
+
+Analyzes features in a GeoJSON file by their `properties.country` field (ISO 3166-1 alpha-2 code). Converts codes to full country names and prints a color-coded, sorted summary table to the console with flag emojis, counts, percentages, and bar charts.
+
+```bash
+python country_stats/country_stats.py data/speed_cams_geocoded.geojson
+```
+
+The positional argument (`input_file`) is required.
 
 ### reverse_geocode
 

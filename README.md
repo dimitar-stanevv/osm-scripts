@@ -32,6 +32,23 @@ python csv_to_geojson/csv_to_geojson.py --input data/SCDB_CSV --output data/geoj
 
 **Important:** the input CSV files must use the exact filenames from the `data/SCDB_CSV` folder (the speed-camera database export). The script converts each `.csv` file one-to-one into a `.geojson` file, preserving the stem of the filename, so consistent naming ensures the output files can be matched back to their source data.
 
+### combine_scdb_dataset_single
+
+Combines the four camera-type GeoJSON files (from [combine_dataset](combine_dataset/)) into a single GeoJSON file with a `type` property on every feature. See [combine_scdb_dataset_single/README.md](combine_scdb_dataset_single/README.md).
+
+```bash
+python combine_scdb_dataset_single/combine_scdb_dataset_single.py \
+    --input data/combined --output data/all_cams.geojson
+```
+
+### country_stats
+
+Analyzes a GeoJSON file and prints a per-country feature breakdown with flag emojis, counts, and bar charts. See [country_stats/README.md](country_stats/README.md).
+
+```bash
+python country_stats/country_stats.py data/speed_cams_geocoded.geojson
+```
+
 ## Data directory
 
 Generated and source data files live under `data/` and are git-ignored. The expected layout is:
