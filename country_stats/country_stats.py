@@ -127,17 +127,24 @@ def has_valid_country(feat: dict) -> bool:
     return bool(code and isinstance(code, str) and len(code) == 2)
 
 
-def analyze(features: list[dict]) -> tuple[Counter, list[dict]]:
-    """Return (counter of country codes, list of features missing country)."""
+CAM_TYPES = ("speed_cam", "combined_cam", "tunnel_cam", "redlight_cam")
+
+
+def analyze(features: list[dict]) -> tuple[Counter, dict[str, Counter], list[dict]]:
+    """Return (total counts by country, per-type counts by country, missing)."""
     counts: Counter = Counter()
+    type_counts: dict[str, Counter] = {t: Counter() for t in CAM_TYPES}
     missing: list[dict] = []
     for feat in features:
         if has_valid_country(feat):
-            code = feat["properties"]["country"]
-            counts[code.upper()] += 1
+            code = feat["properties"]["country"].upper()
+            counts[code] += 1
+            feat_type = (feat.get("properties") or {}).get("type", "")
+            if feat_type in type_counts:
+                type_counts[feat_type][code] += 1
         else:
             missing.append(feat)
-    return counts, missing
+    return counts, type_counts, missing
 
 
 def bar_char(fraction: float, width: int = 30) -> str:
@@ -145,7 +152,11 @@ def bar_char(fraction: float, width: int = 30) -> str:
     return f"{GREEN}{'█' * filled}{DIM}{'░' * (width - filled)}{RESET}"
 
 
-def print_table(counts: Counter, missing: int, total_features: int):
+COL_W = 8
+
+
+def print_table(counts: Counter, type_counts: dict[str, Counter],
+                missing: int, total_features: int):
     ranked = counts.most_common()
     if not ranked:
         print("No features with a valid country code found.")
@@ -155,12 +166,22 @@ def print_table(counts: Counter, missing: int, total_features: int):
     name_width = max(len(country_name(c)) for c, _ in ranked)
     name_width = max(name_width, 7)
 
+    type_headers = [
+        ("speed_cam", "Speed"),
+        ("combined_cam", "Combined"),
+        ("tunnel_cam", "Tunnel"),
+        ("redlight_cam", "Red Light"),
+    ]
+    type_col_part = "".join(f"  {label:>{COL_W}}" for _, label in type_headers)
+    sep_extra = len(type_headers) * (2 + COL_W)
+
     print()
     print(
         f"  {BOLD}{CYAN}{'#':>4}  {'':2}  {'Country':<{name_width}}  "
-        f"{'Count':>8}  {'%':>6}  {'':30}{RESET}"
+        f"{'Total':>8}{type_col_part}  {'%':>6}  {'':30}{RESET}"
     )
-    print(f"  {DIM}{'─' * (4 + 2 + 2 + name_width + 2 + 8 + 2 + 6 + 2 + 30)}{RESET}")
+    rule_len = 4 + 2 + 2 + name_width + 2 + 8 + sep_extra + 2 + 6 + 2 + 30
+    print(f"  {DIM}{'─' * rule_len}{RESET}")
 
     for rank, (code, count) in enumerate(ranked, 1):
         name = country_name(code)
@@ -169,19 +190,31 @@ def print_table(counts: Counter, missing: int, total_features: int):
         fraction = count / max_count
         bar = bar_char(fraction)
 
+        type_vals = ""
+        for cam_type, _ in type_headers:
+            v = type_counts[cam_type].get(code, 0)
+            type_vals += f"  {DIM}{v:>{COL_W},}{RESET}" if v == 0 else f"  {WHITE}{v:>{COL_W},}{RESET}"
+
         print(
             f"  {BOLD}{WHITE}{rank:>4}{RESET}  "
             f"{flag}  "
             f"{YELLOW}{name:<{name_width}}{RESET}  "
-            f"{BOLD}{WHITE}{count:>8,}{RESET}  "
+            f"{BOLD}{WHITE}{count:>8,}{RESET}"
+            f"{type_vals}  "
             f"{MAGENTA}{pct:>5.1f}%{RESET}  "
             f"{bar}"
         )
 
-    print(f"  {DIM}{'─' * (4 + 2 + 2 + name_width + 2 + 8 + 2 + 6 + 2 + 30)}{RESET}")
+    print(f"  {DIM}{'─' * rule_len}{RESET}")
+
+    total_type_vals = ""
+    for cam_type, _ in type_headers:
+        t = sum(type_counts[cam_type].values())
+        total_type_vals += f"  {t:>{COL_W},}"
+
     print(
         f"  {BOLD}{'':>4}  {'':2}  {'Total':<{name_width}}  "
-        f"{total_features:>8,}  {RESET}"
+        f"{total_features:>8,}{total_type_vals}  {RESET}"
         f"{DIM}{len(ranked)} {'country' if len(ranked) == 1 else 'countries'}{RESET}"
     )
     if missing:
@@ -216,8 +249,8 @@ def main():
         print("No features found in the GeoJSON file.")
         return
 
-    counts, missing_features = analyze(features)
-    print_table(counts, len(missing_features), len(features))
+    counts, type_counts, missing_features = analyze(features)
+    print_table(counts, type_counts, len(missing_features), len(features))
 
     if missing_features:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
