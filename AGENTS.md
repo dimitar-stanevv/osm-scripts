@@ -24,22 +24,29 @@ osm-scripts/
 ├── count_features/
 │   ├── count_features.py                # Script: count features in GeoJSON / CSV files
 │   └── README.md
-└── fetch_section_control/
-    ├── fetch_section_control.py          # Script: section control / average-speed enforcement
-    └── README.md                         # Per-script documentation
+├── fetch_section_control/
+│   ├── fetch_section_control.py          # Script: section control / average-speed enforcement
+│   └── README.md                         # Per-script documentation
+└── reverse_geocode/
+    ├── reverse_geocode.py                # Script: Mapbox batch reverse-geocoding
+    └── README.md
 ```
 
 ## Shared configuration — `config.json`
 
-All scripts read their Overpass API endpoint from the top-level `config.json`:
+All scripts read shared settings from the top-level `config.json`:
 
 ```json
 {
-  "overpass_url": "http://overpassdev.tolltracker.eu:12345/api/interpreter"
+  "overpass_url": "http://overpassdev.tolltracker.eu:12345/api/interpreter",
+  "mapbox_access_token": ""
 }
 ```
 
-The URL points to a private Overpass instance, not the public `overpass-api.de`. When adding a new script, load this config instead of hardcoding the URL. See `fetch_section_control.py` for the loading pattern (resolve `Path(__file__).parent.parent / "config.json"`).
+- `overpass_url` — private Overpass instance (not the public `overpass-api.de`).
+- `mapbox_access_token` — Mapbox API token used by `reverse_geocode`. Must be set before running.
+
+When adding a new script, load this config instead of hardcoding URLs or tokens. See `fetch_section_control.py` for the loading pattern (resolve `Path(__file__).parent.parent / "config.json"`).
 
 ## Conventions
 
@@ -103,6 +110,16 @@ python count_features/count_features.py --input data/
 ```
 
 `--input` is required.
+
+### reverse_geocode
+
+Reverse-geocodes every feature in a GeoJSON file using the Mapbox Geocoding batch API. Adds a `rev_geocode` object (feature_type, full_address, name, postcode) and a `country` property (ISO alpha-2 code) to each feature. Processes in resumable batches of up to 1000 via the batch endpoint.
+
+```bash
+python reverse_geocode/reverse_geocode.py data/speed_cams.geojson data/speed_cams_geocoded.geojson
+```
+
+Both positional arguments (`input_file` and `output_file`) are required. Optional flags: `--batch-size`, `--requests-per-minute`.
 
 ## Adding a new script
 
