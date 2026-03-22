@@ -1,6 +1,17 @@
 # osm-scripts
 Scripts for querying OpenStreetMaps for data
 
+## Configuration
+
+Create the `config.json` file in the root directory and set the needed config properties:
+
+```
+{
+  "overpass_url": "OVERPASS_API_URL",
+  "mapbox_access_token": "MAPBOX_ACCESS_TOKEN"
+}
+```
+
 ## Scripts
 
 ### fetch_section_control
