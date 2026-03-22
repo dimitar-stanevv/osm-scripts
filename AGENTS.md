@@ -12,14 +12,8 @@ osm-scripts/
 ├── AGENTS.md                            # This file
 ├── README.md                            # Repo-level readme
 ├── .gitignore
-├── csv_to_geojson/
-│   ├── csv_to_geojson.py                # Script: CSV point data → GeoJSON
-│   └── README.md
-├── combine_dataset/
-│   ├── combine_dataset.py               # Script: merge per-speed-limit GeoJSON files
-│   └── README.md
-├── combine_scdb_dataset_single/
-│   ├── combine_scdb_dataset_single.py   # Script: merge 4 cam-type files into one GeoJSON
+├── csv_to_single_geojson/
+│   ├── csv_to_single_geojson.py         # Script: SCDB CSV files → single combined GeoJSON
 │   └── README.md
 ├── enrich_with_overpass/
 │   ├── enrich_with_overpass.py           # Script: enrich points with nearest road data
@@ -80,32 +74,12 @@ python fetch_section_control/fetch_section_control.py --country BG --output data
 
 Both `--country` and `--output` are required.
 
-### csv_to_geojson
+### csv_to_single_geojson
 
-Converts CSV files with point data (`lng,lat,"description","id"`) into GeoJSON FeatureCollections. One output file per input CSV.
-
-```bash
-python csv_to_geojson/csv_to_geojson.py --input data/SCDB_CSV --output data/geojson
-```
-
-Both `--input` and `--output` are required.
-
-### combine_dataset
-
-Merges per-speed-limit SCDB GeoJSON files (produced by `csv_to_geojson`) into combined datasets grouped by camera type. Outputs four files: `combined_cams.geojson`, `speed_cams.geojson`, `redlight_cams.geojson`, `tunnel_cams.geojson`. Adds `speedLimit` and (for speed cams) `isVariable` properties parsed from the source filenames.
+Converts SCDB CSV files directly into a single combined GeoJSON FeatureCollection. Classifies each CSV by filename pattern into camera types (`combined_cam`, `speed_cam`, `redlight_cam`, `tunnel_cam`), adds `type`, `speedLimit`/`speed_limit`, and `isVariable` properties as appropriate, and streams everything into one output file. Replaces the former three-step pipeline (`csv_to_geojson` → `combine_dataset` → `combine_scdb_dataset_single`).
 
 ```bash
-python combine_dataset/combine_dataset.py --input data/SCDB_geojson_21_mar_2026 --output data/combined
-```
-
-Both `--input` and `--output` are required.
-
-### combine_scdb_dataset_single
-
-Combines the four camera-type GeoJSON files produced by `combine_dataset` (`combined_cams.geojson`, `speed_cams.geojson`, `redlight_cams.geojson`, `tunnel_cams.geojson`) into a single GeoJSON FeatureCollection. Adds a `type` property to every feature and a `speed_limit` property to speed-cam and combined-cam features. Streams output to handle large (50–100 MB) input files.
-
-```bash
-python combine_scdb_dataset_single/combine_scdb_dataset_single.py --input data/combined --output data/all_cams.geojson
+python csv_to_single_geojson/csv_to_single_geojson.py --input data/SCDB_CSV --output data/all_cams.geojson
 ```
 
 Both `--input` and `--output` are required.
