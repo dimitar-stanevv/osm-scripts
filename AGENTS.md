@@ -12,6 +12,15 @@ osm-scripts/
 ├── AGENTS.md                            # This file
 ├── README.md                            # Repo-level readme
 ├── .gitignore
+├── csv_to_geojson/
+│   ├── csv_to_geojson.py                # Script: CSV point data → GeoJSON
+│   └── README.md
+├── combine_dataset/
+│   ├── combine_dataset.py               # Script: merge per-speed-limit GeoJSON files
+│   └── README.md
+├── enrich_with_overpass/
+│   ├── enrich_with_overpass.py           # Script: enrich points with nearest road data
+│   └── README.md
 └── fetch_section_control/
     ├── fetch_section_control.py          # Script: section control / average-speed enforcement
     └── README.md                         # Per-script documentation
@@ -51,6 +60,36 @@ python fetch_section_control/fetch_section_control.py --country BG --output data
 ```
 
 Both `--country` and `--output` are required.
+
+### csv_to_geojson
+
+Converts CSV files with point data (`lng,lat,"description","id"`) into GeoJSON FeatureCollections. One output file per input CSV.
+
+```bash
+python csv_to_geojson/csv_to_geojson.py --input data/SCDB_CSV --output data/geojson
+```
+
+Both `--input` and `--output` are required.
+
+### combine_dataset
+
+Merges per-speed-limit SCDB GeoJSON files (produced by `csv_to_geojson`) into combined datasets grouped by camera type. Outputs four files: `combined_cams.geojson`, `speed_cams.geojson`, `redlight_cams.geojson`, `tunnel_cams.geojson`. Adds `speedLimit` and (for speed cams) `isVariable` properties parsed from the source filenames.
+
+```bash
+python combine_dataset/combine_dataset.py --input data/SCDB_geojson_21_mar_2026 --output data/combined
+```
+
+Both `--input` and `--output` are required.
+
+### enrich_with_overpass
+
+Enriches a GeoJSON point file by querying the Overpass API for the nearest road to each point. Adds an `osm_road` object to each feature's properties containing the closest road's OSM way ID, road class, ref, names, maxspeed, heading, and distance. Processes in resumable batches with concurrent requests and rate limiting.
+
+```bash
+python enrich_with_overpass/enrich_with_overpass.py data/speed_cams.geojson data/speed_cams_enriched.geojson
+```
+
+Both positional arguments (`input_file` and `output_file`) are required. Optional flags: `--batch-size`, `--max-workers`, `--requests-per-second`.
 
 ## Adding a new script
 

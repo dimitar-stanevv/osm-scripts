@@ -32,6 +32,10 @@ Example row:
 - Python 3.8+
 - No external dependencies (uses only the standard library)
 
+## Input file naming
+
+The input CSV files should use the exact filenames from the `data/SCDB_CSV` folder (the speed-camera database export). Each CSV is typically named with a two-letter country code — e.g. `AT.csv`, `BG.csv`, `NL.csv`. The script produces one `.geojson` file per input CSV, keeping the same stem (`AT.csv` → `AT.geojson`), so matching the source filenames ensures consistent, traceable output.
+
 ## Usage
 
 Both `--input` and `--output` are required:
@@ -48,7 +52,7 @@ python csv_to_geojson.py --input <FOLDER> --output <FOLDER>
 ### Example
 
 ```bash
-python csv_to_geojson.py --input data/csv --output data/geojson
+python csv_to_geojson.py --input data/SCDB_CSV --output data/geojson
 ```
 
 ## Output format
