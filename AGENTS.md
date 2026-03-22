@@ -33,6 +33,9 @@ osm-scripts/
 ├── fetch_section_control/
 │   ├── fetch_section_control.py          # Script: section control / average-speed enforcement
 │   └── README.md                         # Per-script documentation
+├── prepare_for_mongo_import/
+│   ├── prepare_for_mongo_import.py     # Script: GeoJSON FeatureCollection → JSON array
+│   └── README.md
 └── reverse_geocode/
     ├── reverse_geocode.py                # Script: Mapbox batch reverse-geocoding
     └── README.md
@@ -136,6 +139,16 @@ python country_stats/country_stats.py data/speed_cams_geocoded.geojson
 ```
 
 The positional argument (`input_file`) is required.
+
+### prepare_for_mongo_import
+
+Strips the GeoJSON FeatureCollection wrapper and outputs a plain JSON array of Feature objects, suitable for `mongoimport --jsonArray` so each feature becomes its own MongoDB document.
+
+```bash
+python prepare_for_mongo_import/prepare_for_mongo_import.py --input data/all_cams.geojson --output data/all_cams.json
+```
+
+Both `--input` and `--output` are required.
 
 ### reverse_geocode
 
