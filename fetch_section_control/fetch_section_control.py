@@ -168,6 +168,7 @@ def relation_to_feature(relation: dict, nodes_by_id: dict, ways_by_id: dict) -> 
     from_point = None
     to_point = None
     section_tags = {}
+    fallback_node_coords = []
 
     for member in members:
         role = member.get("role", "")
@@ -187,29 +188,45 @@ def relation_to_feature(relation: dict, nodes_by_id: dict, ways_by_id: dict) -> 
             if mtype == "node":
                 node = nodes_by_id.get(ref)
                 if node:
-                    devices.append([node["lon"], node["lat"]])
+                    pt = [node["lon"], node["lat"]]
+                    devices.append(pt)
+                    fallback_node_coords.append(pt)
             elif mtype == "way":
                 way = ways_by_id.get(ref)
                 if way:
                     coords = build_way_coords(way, nodes_by_id)
                     if coords:
                         devices.append(coords[0])
+                        fallback_node_coords.append(coords[0])
 
         elif role == "from" and mtype == "node":
             node = nodes_by_id.get(ref)
             if node:
-                from_point = [node["lon"], node["lat"]]
+                pt = [node["lon"], node["lat"]]
+                from_point = pt
+                fallback_node_coords.append(pt)
 
         elif role == "to" and mtype == "node":
             node = nodes_by_id.get(ref)
             if node:
-                to_point = [node["lon"], node["lat"]]
+                pt = [node["lon"], node["lat"]]
+                to_point = pt
+                fallback_node_coords.append(pt)
 
     geom_type, geom_coords = join_ways(section_coord_lists)
+    geometry_source = "section_ways"
 
     if not geom_coords:
-        print(f"  ⚠  Relation {relation['id']} has no section geometry — skipping")
-        return None
+        unique_coords = list(dict.fromkeys(tuple(c) for c in fallback_node_coords))
+        fallback = [list(c) for c in unique_coords]
+        if len(fallback) >= 2:
+            geom_type, geom_coords = "LineString", fallback
+            geometry_source = "fallback_nodes"
+            print(f"  ⚠  Relation {relation['id']} has no section ways — "
+                  f"using {len(fallback)} from/to/device nodes as fallback geometry")
+        else:
+            print(f"  ⚠  Relation {relation['id']} has no usable geometry — skipping")
+            return None
 
     section_length = geometry_length_m(geom_type, geom_coords)
 
@@ -229,6 +246,7 @@ def relation_to_feature(relation: dict, nodes_by_id: dict, ways_by_id: dict) -> 
         "to": to_point,
         "devices": devices,
         "section_length_m": section_length,
+        "geometry_source": geometry_source,
         "relation_tags": tags,
     }
 
