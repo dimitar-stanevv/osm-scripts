@@ -15,6 +15,9 @@ osm-scripts/
 ├── csv_to_single_geojson/
 │   ├── csv_to_single_geojson.py         # Script: SCDB CSV files → single combined GeoJSON
 │   └── README.md
+├── csv_section_to_single_geojson/
+│   ├── csv_section_to_single_geojson.py # Script: SCDB section CSV files → single GeoJSON
+│   └── README.md
 ├── enrich_with_overpass/
 │   ├── enrich_with_overpass.py           # Script: enrich points with nearest road data
 │   └── README.md
@@ -81,6 +84,16 @@ Converts SCDB CSV files directly into a single combined GeoJSON FeatureCollectio
 
 ```bash
 python csv_to_single_geojson/csv_to_single_geojson.py --input data/SCDB_CSV --output data/all_cams.geojson
+```
+
+Both `--input` and `--output` are required.
+
+### csv_section_to_single_geojson
+
+Converts SCDB section-control CSV files into a single combined GeoJSON FeatureCollection. Classifies each CSV by filename pattern into point roles (`section_start`, `section_mid`, `section_end`), adds `max_speed` and `is_variable` properties for start points, and streams everything into one output file.
+
+```bash
+python csv_section_to_single_geojson/csv_section_to_single_geojson.py --input data/step0_csv --output data/section_control.geojson
 ```
 
 Both `--input` and `--output` are required.
