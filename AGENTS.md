@@ -30,6 +30,9 @@ osm-scripts/
 ├── fetch_section_control/
 │   ├── fetch_section_control.py          # Script: section control / average-speed enforcement
 │   └── README.md                         # Per-script documentation
+├── merge_datasets/
+│   ├── merge_datasets.py               # Script: merge multiple GeoJSON files into one
+│   └── README.md
 ├── prepare_for_mongo_import/
 │   ├── prepare_for_mongo_import.py     # Script: GeoJSON FeatureCollection → JSON array
 │   └── README.md
@@ -127,6 +130,16 @@ python country_stats/country_stats.py data/speed_cams_geocoded.geojson
 ```
 
 The positional argument (`input_file`) is required.
+
+### merge_datasets
+
+Merges all GeoJSON FeatureCollection files from a folder into a single combined GeoJSON FeatureCollection. Skips files that are not valid FeatureCollections with a warning. Prints a per-file summary with feature counts.
+
+```bash
+python merge_datasets/merge_datasets.py --input data/geojsons --output data/merged.geojson
+```
+
+Both `--input` and `--output` are required.
 
 ### prepare_for_mongo_import
 
