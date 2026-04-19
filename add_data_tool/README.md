@@ -59,9 +59,9 @@ Optional flags:
   "features": [
     {
       "type": "Feature",
-      "id": "1734523456789",
       "geometry": { "type": "Point", "coordinates": [13.405, 52.52] },
       "properties": {
+        "id": "1734523456789",
         "description": "optional text",
         "type": "speed_cam",
         "speed_limit": 50,

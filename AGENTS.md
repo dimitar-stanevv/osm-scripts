@@ -36,8 +36,14 @@ osm-scripts/
 ├── prepare_for_mongo_import/
 │   ├── prepare_for_mongo_import.py     # Script: GeoJSON FeatureCollection → JSON array
 │   └── README.md
-└── reverse_geocode/
-    ├── reverse_geocode.py                # Script: Mapbox batch reverse-geocoding
+├── reverse_geocode/
+│   ├── reverse_geocode.py                # Script: Mapbox batch reverse-geocoding
+│   └── README.md
+└── add_live_data_tool/
+    ├── add_live_data_tool.py            # Script: interactive tool for adding mock live events
+    ├── templates/
+    │   └── index.html
+    ├── requirements.txt
     └── README.md
 ```
 
@@ -160,6 +166,16 @@ python reverse_geocode/reverse_geocode.py data/speed_cams.geojson data/speed_cam
 ```
 
 Both positional arguments (`input_file` and `output_file`) are required. Optional flags: `--batch-size`, `--requests-per-minute`.
+
+### add_live_data_tool
+
+Interactive Flask + Mapbox GL JS web tool for seeding mock **live-event** data (Waze-style alerts) for testing the live-events integration. Click the map to drop markers; each is snapped to the nearest OSM road and enriched via Mapbox reverse-geocode + Overpass nearest-road lookup. Operator picks a danger type per marker (police, hazard_pothole, road_closure, etc., per [`live_events.md`](live_events.md)). Exports a GeoJSON FeatureCollection in the live-events schema where each feature's `properties` carries `id` (creation timestamp), `type`, `published_at` (creation timestamp), `country`, `reverse_geocode`, and `osm_road`. Reuses enrichment helpers from `add_data_tool/`. Default port `5174` so it can run alongside `add_data_tool` (`5173`).
+
+```bash
+python add_live_data_tool/add_live_data_tool.py
+```
+
+Optional flags: `--host`, `--port`, `--no-browser`.
 
 ## Adding a new script
 

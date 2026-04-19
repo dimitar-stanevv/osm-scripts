@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>add_data_tool</title>
+  <title>add_live_data_tool</title>
   <link
     href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css"
     rel="stylesheet"
@@ -16,7 +16,7 @@
       --border: #2a2f3d;
       --text: #e5e7eb;
       --muted: #9ca3af;
-      --accent: #60a5fa;
+      --accent: #f87171;
       --ok: #34d399;
       --warn: #f59e0b;
       --err: #f87171;
@@ -184,10 +184,21 @@
     .enrichment .label {
       color: var(--muted);
       display: inline-block;
-      min-width: 56px;
+      min-width: 70px;
     }
 
     .enrichment .missing { color: #6b7280; font-style: italic; }
+
+    .meta {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 2px 10px;
+    }
+    .meta .k { color: #6b7280; }
 
     .fields {
       margin-top: 10px;
@@ -202,7 +213,6 @@
       font-size: 11.5px;
     }
 
-    .fields input,
     .fields select {
       width: 100%;
       background: #0f1219;
@@ -213,7 +223,6 @@
       font-size: 12px;
       font-family: inherit;
     }
-    .fields input:focus,
     .fields select:focus {
       outline: none;
       border-color: var(--accent);
@@ -275,7 +284,7 @@
   <div id="app">
     <aside id="panel">
       <header>
-        <h1>add_data_tool</h1>
+        <h1>add_live_data_tool</h1>
         <div class="actions">
           <button class="btn" id="clearBtn" title="Remove all points">Clear</button>
           <button class="btn primary" id="exportBtn" title="Download points as GeoJSON">Export</button>
@@ -284,13 +293,13 @@
       <div id="summary">0 points</div>
       <div id="points">
         <div class="empty">
-          Click anywhere on the map to add a point.<br />
+          Click anywhere on the map to add a mock live event.<br />
           Each point is enriched with reverse geocode and nearest OSM road.
         </div>
       </div>
     </aside>
     <div id="map">
-      <div class="hint">Click the map to add a point · drag markers to relocate</div>
+      <div class="hint">Click the map to add a live event · drag markers to relocate</div>
     </div>
   </div>
 
@@ -308,7 +317,6 @@
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: false }), 'top-right');
     map.addControl(new mapboxgl.GeolocateControl(), 'top-right');
 
-    // In-memory state keyed by a stable client id.
     const points = new Map();
     let nextId = 1;
     let activeId = null;
@@ -319,11 +327,24 @@
     const $clearBtn = document.getElementById('clearBtn');
 
     const TYPE_OPTIONS = [
-      { value: 'speed_cam', label: 'Speed cam' },
-      { value: 'combined_cam', label: 'Combined cam' },
-      { value: 'redlight_cam', label: 'Red-light cam' },
+      { value: 'hazard_pothole',         label: 'Hazard · pothole' },
+      { value: 'hazard_construction',    label: 'Hazard · construction' },
+      { value: 'hazard_object_on_road',  label: 'Hazard · object on road' },
+      { value: 'hazard_vehicle_on_road', label: 'Hazard · vehicle on road' },
+      { value: 'hazard_accident',        label: 'Hazard · accident' },
+      { value: 'hazard_other',           label: 'Hazard · other' },
+      { value: 'police',                 label: 'Police' },
+      { value: 'police_mobile_camera',   label: 'Police · mobile camera' },
+      { value: 'road_closure',           label: 'Road closure' },
     ];
-    const TYPES_WITH_SPEED = new Set(['speed_cam', 'combined_cam']);
+
+    function fmtTimestamp(ms) {
+      try {
+        return new Date(ms).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+      } catch (_) {
+        return String(ms);
+      }
+    }
 
     function createMarker(id, lngLat) {
       const el = document.createElement('div');
@@ -379,7 +400,7 @@
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         const current = points.get(id);
-        if (!current) return; // deleted while in-flight
+        if (!current) return;
         if (data.snapped && Number.isFinite(data.snapped.lng) && Number.isFinite(data.snapped.lat)) {
           current.lng = data.snapped.lng;
           current.lat = data.snapped.lat;
@@ -397,16 +418,16 @@
 
     function addPoint(lng, lat) {
       const id = nextId++;
+      const ts = Date.now();
       const marker = createMarker(id, [lng, lat]);
       points.set(id, {
         id,
-        feature_id: String(Date.now()),
+        feature_id: String(ts),
+        published_at: ts,
         lng, lat, marker,
         status: 'pending',
         enrichment: null,
-        description: '',
-        type: 'speed_cam',
-        speed_limit: '',
+        type: 'police',
       });
       setActive(id);
       render();
@@ -478,7 +499,7 @@
       if (points.size === 0) {
         $points.innerHTML = `
           <div class="empty">
-            Click anywhere on the map to add a point.<br />
+            Click anywhere on the map to add a mock live event.<br />
             Each point is enriched with reverse geocode and nearest OSM road.
           </div>
         `;
@@ -487,7 +508,6 @@
 
       const rows = [];
       for (const p of points.values()) {
-        const showSpeed = TYPES_WITH_SPEED.has(p.type);
         rows.push(`
           <div class="point ${p.id === activeId ? 'active' : ''}" data-point-id="${p.id}">
             <div class="row">
@@ -498,17 +518,15 @@
               <span class="status ${p.status}">${p.status}</span>
             </div>
             ${renderEnrichment(p)}
+            <div class="meta">
+              <div class="k">id</div><div>${p.feature_id}</div>
+              <div class="k">published</div><div>${fmtTimestamp(p.published_at)}</div>
+            </div>
             <div class="fields">
               <label for="type-${p.id}">Type</label>
               <select id="type-${p.id}" data-id="${p.id}" data-field="type">
                 ${TYPE_OPTIONS.map(o => `<option value="${o.value}" ${o.value === p.type ? 'selected' : ''}>${o.label}</option>`).join('')}
               </select>
-              ${showSpeed ? `
-                <label for="speed-${p.id}">Speed</label>
-                <input id="speed-${p.id}" data-id="${p.id}" data-field="speed_limit" type="number" min="0" step="5" placeholder="km/h (optional)" value="${p.speed_limit ?? ''}" />
-              ` : ''}
-              <label for="desc-${p.id}">Desc.</label>
-              <input id="desc-${p.id}" data-id="${p.id}" data-field="description" type="text" placeholder="optional" value="${(p.description ?? '').replace(/"/g, '&quot;')}" />
             </div>
             <div class="actions">
               ${p.status === 'failed' ? `<button class="btn" data-action="retry" data-id="${p.id}">Retry</button>` : ''}
@@ -530,11 +548,6 @@
       if (!p) return;
       if (field === 'type') {
         p.type = t.value;
-        render();
-      } else if (field === 'speed_limit') {
-        p.speed_limit = t.value;
-      } else if (field === 'description') {
-        p.description = t.value;
       }
     });
 
@@ -561,24 +574,18 @@
     $exportBtn.addEventListener('click', () => {
       const features = [];
       for (const p of points.values()) {
-        const props = {};
-        if (p.description && p.description.trim() !== '') {
-          props.description = p.description.trim();
-        }
-        props.type = p.type;
-        if (TYPES_WITH_SPEED.has(p.type)) {
-          const n = parseInt(p.speed_limit, 10);
-          if (Number.isFinite(n)) props.speed_limit = n;
-        }
         const enrichment = p.enrichment || {};
-        props.rev_geocode = enrichment.rev_geocode ?? null;
-        props.country = enrichment.country ?? null;
-        props.osm_road = enrichment.osm_road ?? null;
-
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-          properties: { id: p.feature_id, ...props },
+          properties: {
+            id: p.feature_id,
+            type: p.type,
+            published_at: p.published_at,
+            country: enrichment.country ?? null,
+            reverse_geocode: enrichment.rev_geocode ?? null,
+            osm_road: enrichment.osm_road ?? null,
+          },
         });
       }
       const fc = { type: 'FeatureCollection', features };
@@ -587,7 +594,7 @@
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `points_${ts}.geojson`;
+      a.download = `live_points_${ts}.geojson`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
